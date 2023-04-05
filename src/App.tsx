@@ -25,7 +25,7 @@ const loadCSVData = async (fs: File[]): Promise<CSVFile[]> => {
   const newData: CSVFile[] = await Promise.all(
     fs.map(async (f): Promise<CSVFile> => {
       const text: string[] = (await f.text()).split("\n").map((s) => {
-        return s.replace("\n", "").replace("\r", "");
+        return s.replace(/\n/g, "").replace(/\n/g, "").replace(/#/g, "");
       });
       return {
         name: f.name,
@@ -42,10 +42,11 @@ const loadCSVData = async (fs: File[]): Promise<CSVFile[]> => {
 
 const setIntersection = (l: Set<any>, r: Set<any>): Set<any> => {
   return new Set<any>(Array.from(l).filter((v) => r.has(v)));
-}
+};
 
 const App: React.FC = () => {
-  const [deduplicationHeader, setDeduplicationHeader] = React.useState<string>();
+  const [deduplicationHeader, setDeduplicationHeader] =
+    React.useState<string>();
   const [duplicates, setDuplicates] = React.useState<number>();
   const [files, setFiles] = React.useState<CSVFile[]>([]);
   const [caseSensitive, setCaseSensitive] = React.useState<boolean>(true);
@@ -60,7 +61,9 @@ const App: React.FC = () => {
       });
       setCommonHeaders(
         Array.from(
-          allHeaders.reduceRight((prev, curr): Set<string> => setIntersection(prev, curr))
+          allHeaders.reduceRight(
+            (prev, curr): Set<string> => setIntersection(prev, curr)
+          )
         )
       );
     } else {
@@ -103,7 +106,7 @@ const App: React.FC = () => {
         let dupes = 0;
         files.forEach((file) => {
           // Add the headers
-          data.push(file.data.headers.join(","))
+          data.push(file.data.headers.join(","));
           const index = file.data.headers.indexOf(deduplicationHeader);
           file.data.rows.forEach((row) => {
             const key = caseSensitive
@@ -115,9 +118,9 @@ const App: React.FC = () => {
             } else {
               dupes++;
             }
-          })
-        }
-        );
+          });
+        });
+        console.log(data.length);
         setDuplicates(dupes);
         setOutputData(data);
       };
@@ -127,7 +130,13 @@ const App: React.FC = () => {
 
     setDeduplicationHeader(undefined);
     setProcessing(false);
-  }, [caseSensitive, deduplicationHeader, files, setDeduplicationHeader, setProcessing]);
+  }, [
+    caseSensitive,
+    deduplicationHeader,
+    files,
+    setDeduplicationHeader,
+    setProcessing,
+  ]);
 
   return (
     <>
@@ -233,15 +242,24 @@ const App: React.FC = () => {
                 <Stack spacing={2}>
                   <Typography>
                     Processed {files.length} files, finding {duplicates}{" "}
-                    duplicates and {outputData.length - files.length} unique keys
+                    duplicates and {outputData.length - files.length} unique
+                    keys
                     {caseSensitive
                       ? " (Case Sensitive)."
                       : " (Case Insensitive)."}
                   </Typography>
                   <Stack direction="row">
-                    <Button onClick={() => {
-                      window.open("data:text/csv;charset=utf-8," + outputData.join("\n"))
-                    }} variant="contained">Download</Button>
+                    <Button
+                      onClick={() => {
+                        const dataString = outputData.join("\n");
+                        window.open(
+                          `data:text/csv;charset=utf-8,${dataString}`
+                        );
+                      }}
+                      variant="contained"
+                    >
+                      Download
+                    </Button>
                   </Stack>
                 </Stack>
               </>
